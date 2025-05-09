@@ -7,7 +7,8 @@ export const defaultConfig = {
   matchedHostnames: [
     '.apple-dns.net',
     '.youtube.com',
-    '.com',
+    'chatgpt.com',
+    '*.googlevideo.com',
   ],
   // timeout: 5000,
 };

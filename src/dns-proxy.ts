@@ -16,7 +16,15 @@ export class DnsProxy {
   }
 
   private isMatchedHostname(hostname: string) {
-    return this.matchedHostnames.some(h => hostname.endsWith(h));
+    return this.matchedHostnames.some(pattern => {
+      if (pattern.startsWith('*.')) {
+        // For wildcard patterns like *.example.com
+        const domain = pattern.slice(2); // Remove the *. prefix
+        return hostname.endsWith(domain);
+      }
+      // For exact matches
+      return hostname === pattern;
+    });
   }
 
   private setupServer() {
