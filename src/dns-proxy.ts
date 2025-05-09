@@ -50,7 +50,7 @@ export class DnsProxy {
       throw new Error('No question in DNS query');
     }
 
-    if (question.type === 'A') this.logger.info('DNS query:', {
+    if (question.type === 'A') this.logger.debug('DNS query:', {
       type: question.type,
       name: question.name,
       class: question.class
@@ -85,7 +85,7 @@ export class DnsProxy {
           this.logger.info(`${question.name} ${a.type}: ${a.data}`);
         })
       } else {
-        this.logger.warn(`not matched ${question.name} ${question.type}`);
+        this.logger.debug(`not matched ${question.name} ${question.type}`);
       }
 
       // Log raw response for debugging
