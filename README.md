@@ -24,6 +24,14 @@ A TypeScript-based DNS proxy that forwards DNS requests to specified DNS servers
    npm start
    ```
 
+### Manual testing
+1. Start local server `npm start`)
+2. Use `dig`
+  ```sh
+  dig xp.apple.com @127.0.0.1
+  dig chatgpt.com @127.0.0.1
+  ```
+
 ## Requirements
 
 ### Technical Stack
