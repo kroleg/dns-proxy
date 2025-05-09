@@ -1,8 +1,8 @@
-import { DnsServer } from './server/dns-server.js';
-import { defaultConfig } from './types/config.js';
+import { DnsProxy } from './dns-proxy.js';
+import { defaultConfig } from './config.js';
 
 async function main() {
-  const server = new DnsServer(defaultConfig);
+  const server = new DnsProxy(defaultConfig);
 
   try {
     await server.start();

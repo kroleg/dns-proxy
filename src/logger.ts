@@ -1,9 +1,8 @@
 import winston from 'winston';
-import type { ProxyConfig } from '../types/config.js';
 
-export function createLogger(config: Pick<ProxyConfig, 'logLevel'>) {
+export function createLogger(logLevel: string) {
   return winston.createLogger({
-    level: config.logLevel,
+    level: logLevel,
     format: winston.format.combine(
       // winston.format.timestamp(),
       winston.format.json(),
