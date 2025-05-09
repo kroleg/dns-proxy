@@ -27,6 +27,42 @@ export class DnsProxy {
     });
   }
 
+  private async submitToService(hostname: string, ips: string[]) {
+    if (!this.config.serviceEndpoint.enabled) {
+      return;
+    }
+
+    try {
+      const url = new URL(this.config.serviceEndpoint.path, this.config.serviceEndpoint.url);
+      const response = await fetch(url.toString(), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          hostname,
+          ips,
+          timestamp: new Date().toISOString()
+        })
+      });
+
+      if (!response.ok) {
+        this.logger.error('Failed to submit to service:', {
+          status: response.status,
+          statusText: response.statusText
+        });
+      } else {
+        this.logger.debug('Submitted to service:', {
+          hostname,
+          ips,
+          timestamp: new Date().toISOString()
+        });
+      }
+    } catch (error) {
+      this.logger.error('Error submitting to service:', error);
+    }
+  }
+
   private setupServer() {
     this.server.on('error', (err: Error) => {
       this.logger.error('Server error:', err);
@@ -81,9 +117,18 @@ export class DnsProxy {
       const decodedResponse = dnsPacket.decode(response);
 
       if (this.isMatchedHostname(question.name)) {
-        decodedResponse.answers.filter((a: DnsAnswer) => a.type === 'A' || a.type === 'AAAA').forEach((a: DnsAnswer) => {
-          this.logger.info(`${question.name} ${a.type}: ${a.data}`);
-        })
+        const resolvedIps = decodedResponse.answers
+          .filter((a: DnsAnswer) => a.type === 'A' || a.type === 'AAAA')
+          .map((a: DnsAnswer) => a.data.toString());
+
+        resolvedIps.forEach((ip: string) => {
+          this.logger.info(`${question.name} ${ip}`);
+        });
+
+        // Submit to service if enabled
+        if (resolvedIps.length > 0) {
+          await this.submitToService(question.name, resolvedIps);
+        }
       } else {
         this.logger.debug(`not matched ${question.name} ${question.type}`);
       }

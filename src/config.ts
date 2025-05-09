@@ -11,4 +11,9 @@ export const defaultConfig = {
     '*.googlevideo.com',
   ],
   // timeout: 5000,
+  serviceEndpoint: {
+    enabled: true,
+    url: 'http://localhost:3000',
+    path: '/api/dns-resolutions'
+  }
 };
