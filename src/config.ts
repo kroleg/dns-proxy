@@ -10,10 +10,6 @@ export const defaultConfig = {
     'chatgpt.com',
     '*.googlevideo.com',
   ],
+  logResolvedToFile: 'dns-proxy.log',
   // timeout: 5000,
-  serviceEndpoint: {
-    enabled: true,
-    url: 'http://localhost:3000',
-    path: '/api/dns-resolutions'
-  }
 };

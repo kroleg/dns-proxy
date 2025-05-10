@@ -3,16 +3,19 @@ import type { RemoteInfo } from 'node:dgram';
 import dnsPacket, { type DnsAnswer } from 'dns-packet';
 import { createLogger } from './logger.js';
 import { defaultConfig } from './config.js';
+import fs from 'node:fs/promises';
 
 export class DnsProxy {
   private server: dgram.Socket;
   private logger = createLogger('info');
   private matchedHostnames: string[];
+  private logResolvedToFile: string;
 
   constructor(private config: typeof defaultConfig) {
     this.server = dgram.createSocket('udp4');
     this.setupServer();
     this.matchedHostnames = config.matchedHostnames;
+    this.logResolvedToFile = config.logResolvedToFile;
   }
 
   private isMatchedHostname(hostname: string) {
@@ -27,39 +30,13 @@ export class DnsProxy {
     });
   }
 
-  private async submitToService(hostname: string, ips: string[]) {
-    if (!this.config.serviceEndpoint.enabled) {
-      return;
-    }
-
+  private async logResolvedHost(hostname: string, ips: string[]) {
+    const logEntry = JSON.stringify({ ts: new Date().toISOString(), hostname, ips}) + '\n';
     try {
-      const url = new URL(this.config.serviceEndpoint.path, this.config.serviceEndpoint.url);
-      const response = await fetch(url.toString(), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          hostname,
-          ips,
-          timestamp: new Date().toISOString()
-        })
-      });
-
-      if (!response.ok) {
-        this.logger.error('Failed to submit to service:', {
-          status: response.status,
-          statusText: response.statusText
-        });
-      } else {
-        this.logger.debug('Submitted to service:', {
-          hostname,
-          ips,
-          timestamp: new Date().toISOString()
-        });
-      }
+      await fs.appendFile(this.logResolvedToFile, logEntry);
+      this.logger.debug('Logged to file:', { hostname, ips });
     } catch (error) {
-      this.logger.error('Error submitting to service:', error);
+      this.logger.error('Error writing to log file:', error);
     }
   }
 
@@ -127,7 +104,7 @@ export class DnsProxy {
 
         // Submit to service if enabled
         if (resolvedIps.length > 0) {
-          await this.submitToService(question.name, resolvedIps);
+          await this.logResolvedHost(question.name, resolvedIps);
         }
       } else {
         this.logger.debug(`not matched ${question.name} ${question.type}`);
