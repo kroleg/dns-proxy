@@ -8,26 +8,12 @@ import fs from 'node:fs/promises';
 export class DnsProxy {
   private server: dgram.Socket;
   private logger = createLogger('info');
-  private matchedHostnames: string[];
   private logResolvedToFile: string;
 
   constructor(private config: typeof defaultConfig) {
     this.server = dgram.createSocket('udp4');
     this.setupServer();
-    this.matchedHostnames = config.matchedHostnames;
     this.logResolvedToFile = config.logResolvedToFile;
-  }
-
-  private isMatchedHostname(hostname: string) {
-    return this.matchedHostnames.some(pattern => {
-      if (pattern.startsWith('*.')) {
-        // For wildcard patterns like *.example.com
-        const domain = pattern.slice(2); // Remove the *. prefix
-        return hostname.endsWith(domain);
-      }
-      // For exact matches
-      return hostname === pattern;
-    });
   }
 
   private async logResolvedHost(hostname: string, ips: string[]) {
@@ -93,21 +79,17 @@ export class DnsProxy {
 
       const decodedResponse = dnsPacket.decode(response);
 
-      if (this.isMatchedHostname(question.name)) {
-        const resolvedIps = decodedResponse.answers
-          .filter((a: DnsAnswer) => a.type === 'A' || a.type === 'AAAA')
-          .map((a: DnsAnswer) => a.data.toString());
+      const resolvedIps = decodedResponse.answers
+        .filter((a: DnsAnswer) => a.type === 'A' || a.type === 'AAAA')
+        .map((a: DnsAnswer) => a.data.toString());
 
-        resolvedIps.forEach((ip: string) => {
-          this.logger.info(`${question.name} ${ip}`);
-        });
+      resolvedIps.forEach((ip: string) => {
+        this.logger.info(`${question.name} ${ip}`);
+      });
 
-        // Submit to service if enabled
-        if (resolvedIps.length > 0) {
-          await this.logResolvedHost(question.name, resolvedIps);
-        }
-      } else {
-        this.logger.debug(`not matched ${question.name} ${question.type}`);
+      // Submit to service if enabled
+      if (resolvedIps.length > 0) {
+        await this.logResolvedHost(question.name, resolvedIps);
       }
 
       // Log raw response for debugging
